@@ -1,5 +1,6 @@
 import pyglet
 from pyglet import shapes
+from pyglet.window import key
 from math import hypot, atan, acos, asin
 
 WINDOW_WIDTH = 640
@@ -14,6 +15,10 @@ COLLISION_FORCE = 40
 DT_SCALE = 1
 ELASTICTY = 0.2
 
+def dot_2d(x1, x2, y1, y2):
+    return (x1*x2) + (y1*y2)
+    
+
 particles = []
 particle_index_pos = {}
 
@@ -21,6 +26,8 @@ particle_index_pos = {}
 window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption = 'Fluid Simulation')
 window.set_location(440, 240)
 
+keys = key.KeyStateHandler()
+window.push_handlers(keys)
 # Batch for rendering
 shapes_batch = pyglet.graphics.Batch()
 
@@ -55,23 +62,41 @@ class Particle:
         self.circle.y += self.velocity[1] * dt
     
 # Shapes
-background = shapes.Rectangle(x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, color = (26, 28, 44), batch = shapes_batch)
+background = shapes.Rectangle(x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, color = (177, 62, 83), batch = shapes_batch)
 
 
 # for i in range(NUMBER_OF_PARTICLES):
-#     particles.append(Particle(i, (i, i, i)))
+#     j = i
+#     if i == 0:
+#         j = 0.0000000001
+#     colour = int(255 / j)
+#     particles.append(Particle(i, (255, colour, 255), (WINDOW_WIDTH / 2) + i * 10, (WINDOW_HEIGHT / 2) + i * 30))
 #     particle_index_pos[i] = (particles[i].circle.x, particles[i].circle.y)
 
-particles.append(Particle(0, (50, 50, 50), 300, 200))
-particles.append(Particle(1, (100, 100, 100), 290, 150))
-particles.append(Particle(2, (150, 150, 150), 350, 250))
-particles.append(Particle(3, (200, 200, 200), 350, 300))
-particles.append(Particle(4, (250, 250, 250), 250, 100))
-particle_index_pos[0] = (particles[0].circle.x, particles[0].circle.y)
-particle_index_pos[1] = (particles[1].circle.x, particles[1].circle.y)
-particle_index_pos[2] = (particles[2].circle.x, particles[2].circle.y)
-particle_index_pos[3] = (particles[3].circle.x, particles[3].circle.y)
-particle_index_pos[4] = (particles[4].circle.x, particles[4].circle.y)
+def make_particles():
+    
+    particles.append(Particle(0, (25, 25, 25), 300, 200))
+    particles.append(Particle(1, (50, 50, 50), 360, 210))
+    particles.append(Particle(2, (75, 75, 75), 420, 170))
+    particles.append(Particle(3, (100, 100, 100), 200, 200))
+    particles.append(Particle(4, (125, 125, 125), 390, 150))
+    particles.append(Particle(5, (150, 150, 150), 170, 200))
+    particles.append(Particle(6, (175, 175, 175), 280, 150))
+    particles.append(Particle(7, (200, 200, 200), 350, 250))
+    particles.append(Particle(8, (225, 225, 225), 350, 300))
+    particles.append(Particle(9, (250, 250, 250), 250, 100))
+    particle_index_pos[0] = (particles[0].circle.x, particles[0].circle.y)
+    particle_index_pos[1] = (particles[1].circle.x, particles[1].circle.y)
+    particle_index_pos[2] = (particles[2].circle.x, particles[2].circle.y)
+    particle_index_pos[3] = (particles[3].circle.x, particles[3].circle.y)
+    particle_index_pos[4] = (particles[4].circle.x, particles[4].circle.y)
+    particle_index_pos[5] = (particles[5].circle.x, particles[5].circle.y)
+    particle_index_pos[6] = (particles[6].circle.x, particles[6].circle.y)
+    particle_index_pos[7] = (particles[7].circle.x, particles[7].circle.y)
+    particle_index_pos[8] = (particles[8].circle.x, particles[8].circle.y)
+    particle_index_pos[9] = (particles[9].circle.x, particles[9].circle.y)
+
+make_particles()
 
 # Running the actual functions
 @window.event
@@ -80,6 +105,12 @@ def on_draw():
     shapes_batch.draw()
     
 def update(dt):
+    if keys[key.SPACE]:
+        particles[0].velocity[1] += 40
+    if keys[key.LEFT]:
+        particles[0].velocity[0] -= 10
+    if keys[key.RIGHT]:
+        particles[0].velocity[0] += 10
     dt = dt/DT_SCALE
     
     for particle in particles:
@@ -93,21 +124,19 @@ def update(dt):
             x1, y1 = particle_pos
             x2, y2 = other_pos
             # Calculate the distance between them
-            distance = hypot(x1 - x2, y1 - y2)
+            distance = hypot(abs(x1 - x2), abs(y1 - y2))
             
             if distance <= 2 * PARTICLE_RADIUS:
-                print("COLLISION")
                 if abs(distance) == 0:
                     distance = 0.0000000000000000000000000000000000000000000000000001
                 
                 # This section of math is taken from Eric Leong: https://ericleong.me/research/circle-circle/#dynamic-circle-circle-collision
                 
-                # Finding the norm of the vectors
+                # Finding the normal of the collision
                 norm_of_vector_x = (x2 - x1) / distance
                 norm_of_vector_y = (y2 - y1) / distance
                 
-                # I believe this is the relative velocity?
-                p = (particles[i].velocity[0] * norm_of_vector_x) + (particles[i].velocity[1] * norm_of_vector_y)
+                p = (dot_2d(particles[i].velocity[0], norm_of_vector_x, particles[i].velocity[1], norm_of_vector_y)) - (dot_2d(particles[j].velocity[0], norm_of_vector_x, particles[j].velocity[1], norm_of_vector_y))
                 
                 # Updating the particle velocities based on the previous calculations
                 particles[i].velocity[0] -= (p * norm_of_vector_x)
