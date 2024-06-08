@@ -7,7 +7,7 @@ WINDOW_WIDTH, WINDOW_HEIGHT = 1280, 720
 
 # Making the window and setting it to be in the middle of the screen (on a 1080p screen)
 window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption = 'Fluid Simulation')
-window.set_location(440, 240)
+window.set_location(150, 75)
 
 # Batch for rendering
 shapes_batch = pyglet.graphics.Batch()

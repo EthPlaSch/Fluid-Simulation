@@ -6,14 +6,15 @@ from math import hypot, atan, acos, asin
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 360
 GRAVITY = 9.8
-NUMBER_OF_PARTICLES = 2
+NUMBER_OF_PARTICLES = 150
 PARTICLE_RADIUS = 10
 SPACING = 20
 # Sweetie 16 Palette
 PARTICLE_COLOUR = (65, 166, 246)
 COLLISION_FORCE = 40
 DT_SCALE = 1
-ELASTICTY = 0.2
+ELASTICTY = 0.4
+SEPERATION_FACTOR = 2
 
 def dot_2d(x1, x2, y1, y2):
     return (x1*x2) + (y1*y2)
@@ -40,16 +41,17 @@ class Particle:
         self.index = index
         self.velocity = [0, 0]
 
+    # Function to update the balls position each frame
     def update_ball(self, dt):
         dt = dt/DT_SCALE
         self.velocity[1] -= GRAVITY
 
-        # Keep in the boundary
+        # Keep in the boundary | if the ball hits an edge move it back inside the boundary and reverse its velocity
         if self.circle.y <= self.circle.radius:
             self.circle.y = self.circle.radius
             self.velocity[1] *= -ELASTICTY
         if self.circle.y >= WINDOW_HEIGHT - self.circle.radius:
-            self.circle.y = WINDOW_HEIGHT - self.circle.radius
+            self.circle.y = WINDOW_HEIGHT - self.circle.radius - 5
             self.velocity[1] *= -ELASTICTY
         if self.circle.x <= self.circle.radius:
             self.circle.x = self.circle.radius
@@ -57,60 +59,43 @@ class Particle:
         if self.circle.x >= WINDOW_WIDTH - self.circle.radius:
             self.circle.x = WINDOW_WIDTH - self.circle.radius
             self.velocity[0] *= -ELASTICTY
-                
+             
+        # Applying the updated velocities to the particle's position
         self.circle.x += self.velocity[0] * dt
         self.circle.y += self.velocity[1] * dt
     
-# Shapes
-background = shapes.Rectangle(x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, color = (177, 62, 83), batch = shapes_batch)
+# Background rectangle
+background = shapes.Rectangle(x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, color = (26, 28, 44), batch = shapes_batch)
 
+colour = int(255 / NUMBER_OF_PARTICLES)
 
-# for i in range(NUMBER_OF_PARTICLES):
-#     j = i
-#     if i == 0:
-#         j = 0.0000000001
-#     colour = int(255 / j)
-#     particles.append(Particle(i, (255, colour, 255), (WINDOW_WIDTH / 2) + i * 10, (WINDOW_HEIGHT / 2) + i * 30))
-#     particle_index_pos[i] = (particles[i].circle.x, particles[i].circle.y)
-
-def make_particles():
+for i in range(NUMBER_OF_PARTICLES):
+    particles.append(Particle(i, (65, 166, 246), i, i))
+    particle_index_pos[i] = (particles[i].circle.x, particles[i].circle.y)
     
-    particles.append(Particle(0, (25, 25, 25), 300, 200))
-    particles.append(Particle(1, (50, 50, 50), 360, 210))
-    particles.append(Particle(2, (75, 75, 75), 420, 170))
-    particles.append(Particle(3, (100, 100, 100), 200, 200))
-    particles.append(Particle(4, (125, 125, 125), 390, 150))
-    particles.append(Particle(5, (150, 150, 150), 170, 200))
-    particles.append(Particle(6, (175, 175, 175), 280, 150))
-    particles.append(Particle(7, (200, 200, 200), 350, 250))
-    particles.append(Particle(8, (225, 225, 225), 350, 300))
-    particles.append(Particle(9, (250, 250, 250), 250, 100))
-    particle_index_pos[0] = (particles[0].circle.x, particles[0].circle.y)
-    particle_index_pos[1] = (particles[1].circle.x, particles[1].circle.y)
-    particle_index_pos[2] = (particles[2].circle.x, particles[2].circle.y)
-    particle_index_pos[3] = (particles[3].circle.x, particles[3].circle.y)
-    particle_index_pos[4] = (particles[4].circle.x, particles[4].circle.y)
-    particle_index_pos[5] = (particles[5].circle.x, particles[5].circle.y)
-    particle_index_pos[6] = (particles[6].circle.x, particles[6].circle.y)
-    particle_index_pos[7] = (particles[7].circle.x, particles[7].circle.y)
-    particle_index_pos[8] = (particles[8].circle.x, particles[8].circle.y)
-    particle_index_pos[9] = (particles[9].circle.x, particles[9].circle.y)
-
-make_particles()
-
 # Running the actual functions
 @window.event
 def on_draw():
+    
+    # Clearing the window
     window.clear()
+    
+    # Drawing all the shapes in the batch
     shapes_batch.draw()
     
+# Update function
 def update(dt):
+    
+    # Getting 
     if keys[key.SPACE]:
-        particles[0].velocity[1] += 40
+        for i in range(len(particles)):
+            particles[i].velocity[1] += 40
     if keys[key.LEFT]:
-        particles[0].velocity[0] -= 10
+        for i in range(len(particles)):
+            particles[i].velocity[0] -= 10
     if keys[key.RIGHT]:
-        particles[0].velocity[0] += 10
+        for i in range(len(particles)):
+            particles[i].velocity[0] += 10
     dt = dt/DT_SCALE
     
     for particle in particles:
@@ -144,6 +129,11 @@ def update(dt):
                 particles[j].velocity[0] += (p * norm_of_vector_x)
                 particles[j].velocity[1] += (p * norm_of_vector_y)
                 # -----------------------------------------------------------------------------------------------------------------------------
+                
+                particles[i].circle.x -= norm_of_vector_x * SEPERATION_FACTOR
+                particles[i].circle.y -= norm_of_vector_y * SEPERATION_FACTOR
+                particles[j].circle.x += norm_of_vector_x * SEPERATION_FACTOR
+                particles[j].circle.y += norm_of_vector_y * SEPERATION_FACTOR
                 
     for i in range(len(particles)):
         particles[i].update_ball(dt)
