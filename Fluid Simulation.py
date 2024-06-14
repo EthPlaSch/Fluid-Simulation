@@ -1,19 +1,24 @@
 import pyglet
 from pyglet import shapes
+from pyglet.window import key
 from math import hypot, atan, acos, asin
 
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 360
 GRAVITY = 9.8
-NUMBER_OF_PARTICLES = 2
+NUMBER_OF_PARTICLES = 150
 PARTICLE_RADIUS = 10
 SPACING = 20
 # Sweetie 16 Palette
 PARTICLE_COLOUR = (65, 166, 246)
 COLLISION_FORCE = 40
 DT_SCALE = 1
-ELASTICTY = 0.2
+ELASTICTY = 0.4
+SEPERATION_FACTOR = 2
 
+def dot_2d(x1, x2, y1, y2):
+    return (x1*x2) + (y1*y2)
+    
 particles = []
 particle_index_pos = {}
 
@@ -21,28 +26,36 @@ particle_index_pos = {}
 window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption = 'Fluid Simulation')
 window.set_location(440, 240)
 
+keys = key.KeyStateHandler()
+window.push_handlers(keys)
 # Batch for rendering
-shapes_batch = pyglet.graphics.Batch()
+sprites_batch = pyglet.graphics.Batch()
+
+# Loading in the image used to simulate the blur
+particle_image = pyglet.image.load("Particle.png")
+
+images = []
 
 # Particle Class
 class Particle:
     
     def __init__(self, index, colour = PARTICLE_COLOUR, x = WINDOW_WIDTH / 2, y = WINDOW_HEIGHT / 2) -> None:
-        self.circle = shapes.Circle(x = x, y = y, radius = PARTICLE_RADIUS, color = colour, batch = shapes_batch)
+        self.circle = shapes.Circle(x = x, y = y, radius = PARTICLE_RADIUS, color = colour)
         self.circle.opacity = 200
         self.index = index
         self.velocity = [0, 0]
 
-    def update_ball(self, dt):
+    # Function to update the particle's position each frame
+    def update_particle(self, dt):
         dt = dt/DT_SCALE
         self.velocity[1] -= GRAVITY
 
-        # Keep in the boundary
+        # Keep in the boundary | if the particle hits an edge move it back inside the boundary and reverse its velocity
         if self.circle.y <= self.circle.radius:
             self.circle.y = self.circle.radius
             self.velocity[1] *= -ELASTICTY
         if self.circle.y >= WINDOW_HEIGHT - self.circle.radius:
-            self.circle.y = WINDOW_HEIGHT - self.circle.radius
+            self.circle.y = WINDOW_HEIGHT - self.circle.radius - 5
             self.velocity[1] *= -ELASTICTY
         if self.circle.x <= self.circle.radius:
             self.circle.x = self.circle.radius
@@ -50,41 +63,60 @@ class Particle:
         if self.circle.x >= WINDOW_WIDTH - self.circle.radius:
             self.circle.x = WINDOW_WIDTH - self.circle.radius
             self.velocity[0] *= -ELASTICTY
-                
+             
+        # Applying the updated velocities to the particle's position
         self.circle.x += self.velocity[0] * dt
         self.circle.y += self.velocity[1] * dt
     
-# Shapes
-background = shapes.Rectangle(x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, color = (26, 28, 44), batch = shapes_batch)
+# Background rectangle
+background = shapes.Rectangle(x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, color = (26, 28, 44))
 
+colour = int(255 / NUMBER_OF_PARTICLES)
 
-# for i in range(NUMBER_OF_PARTICLES):
-#     particles.append(Particle(i, (i, i, i)))
-#     particle_index_pos[i] = (particles[i].circle.x, particles[i].circle.y)
-
-particles.append(Particle(0, (177, 62, 83), 300, 200))
-particles.append(Particle(1, (239, 125, 87), 290, 150))
-particles.append(Particle(2, (255, 205, 117), 350, 250))
-particles.append(Particle(3, (56, 183, 100), 350, 300))
-particles.append(Particle(4, (65, 166, 246), 250, 100))
-particle_index_pos[0] = (particles[0].circle.x, particles[0].circle.y)
-particle_index_pos[1] = (particles[1].circle.x, particles[1].circle.y)
-particle_index_pos[2] = (particles[2].circle.x, particles[2].circle.y)
-particle_index_pos[3] = (particles[3].circle.x, particles[3].circle.y)
-particle_index_pos[4] = (particles[4].circle.x, particles[4].circle.y)
-
+# Generating the particles
+for i in range(NUMBER_OF_PARTICLES):
+    particles.append(Particle(i, (65, 166, 246), i, i))
+    particle_index_pos[i] = (particles[i].circle.x, particles[i].circle.y)
+    
+    # Creating the sprites to place on each particle
+    single_particle_image = pyglet.sprite.Sprite(particle_image, particles[i].circle.x, particles[i].circle.y, batch = sprites_batch)
+    single_particle_image.scale = 0.022
+    images.append(single_particle_image)
+    
 # Running the actual functions
 @window.event
 def on_draw():
-    window.clear()
-    shapes_batch.draw()
     
+    # Clearing the window
+    window.clear()
+    
+    # Drawing the background
+    background.draw()
+
+    # Drawing the sprites 
+    sprites_batch.draw()
+    
+# Update function
 def update(dt):
+    
+    # Getting key input to impart force on the particles
+    if keys[key.SPACE]:
+        for i in range(len(particles)):
+            particles[i].velocity[1] += 40
+    if keys[key.LEFT]:
+        for i in range(len(particles)):
+            particles[i].velocity[0] -= 15
+    if keys[key.RIGHT]:
+        for i in range(len(particles)):
+            particles[i].velocity[0] += 15
+            
+    # Updating the delta time to be in slomo or not
     dt = dt/DT_SCALE
     
     for particle in particles:
         particle_index_pos[particle.index] = (particles[particle.index].circle.x, particles[particle.index].circle.y)
         
+    # Looping over every particle
     for i in range(len(particles) - 1):
         particle_pos = particle_index_pos[i]
         # Loop over every other particle
@@ -93,21 +125,22 @@ def update(dt):
             x1, y1 = particle_pos
             x2, y2 = other_pos
             # Calculate the distance between them
-            distance = hypot(x1 - x2, y1 - y2)
+            distance = hypot(abs(x1 - x2), abs(y1 - y2))
             
+            # Checking if the particles collided
             if distance <= 2 * PARTICLE_RADIUS:
-                print("COLLISION")
+                
+                # Avoiding divide by 0 error
                 if abs(distance) == 0:
                     distance = 0.0000000000000000000000000000000000000000000000000001
                 
                 # This section of math is taken from Eric Leong: https://ericleong.me/research/circle-circle/#dynamic-circle-circle-collision
                 
-                # Finding the norm of the vectors
+                # Finding the normal of the collision
                 norm_of_vector_x = (x2 - x1) / distance
                 norm_of_vector_y = (y2 - y1) / distance
                 
-                # I believe this is the relative velocity?
-                p = (particles[i].velocity[0] * norm_of_vector_x) + (particles[i].velocity[1] * norm_of_vector_y)
+                p = (dot_2d(particles[i].velocity[0], norm_of_vector_x, particles[i].velocity[1], norm_of_vector_y)) - (dot_2d(particles[j].velocity[0], norm_of_vector_x, particles[j].velocity[1], norm_of_vector_y))
                 
                 # Updating the particle velocities based on the previous calculations
                 particles[i].velocity[0] -= (p * norm_of_vector_x)
@@ -116,8 +149,23 @@ def update(dt):
                 particles[j].velocity[1] += (p * norm_of_vector_y)
                 # -----------------------------------------------------------------------------------------------------------------------------
                 
+                # This forces the particles apart by moving the particles apart along the normalised vectors
+                particles[i].circle.x -= norm_of_vector_x * SEPERATION_FACTOR
+                particles[i].circle.y -= norm_of_vector_y * SEPERATION_FACTOR
+                particles[j].circle.x += norm_of_vector_x * SEPERATION_FACTOR
+                particles[j].circle.y += norm_of_vector_y * SEPERATION_FACTOR
+              
+        # Updating the position of the sprite to match the position of the particle  
+        images[i].x = particles[i].circle.x - PARTICLE_RADIUS * 2.2
+        images[i].y = particles[i].circle.y - PARTICLE_RADIUS * 2.2
+        
+    # Updating the last particle's image location
+    images[-1].x = particles[-1].circle.x - PARTICLE_RADIUS * 2.2
+    images[-1].y = particles[-1].circle.y - PARTICLE_RADIUS * 2.2
+             
+    # Looping over every particle and updating them   
     for i in range(len(particles)):
-        particles[i].update_ball(dt)
+        particles[i].update_particle(dt)
     
 
 # Basically saying call the update function 60 times per second
