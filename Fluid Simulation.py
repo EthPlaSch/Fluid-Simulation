@@ -128,9 +128,14 @@ def update(dt):
         particle_pos = particle_index_pos[i]
         # Loop over every other particle
         for j in range(i + 1, len(particles)):
+            
+            # Getting the other particles position 
             other_pos = particle_index_pos[j]
+            
+            # Assigning the positions to variables
             x1, y1 = particle_pos
             x2, y2 = other_pos
+            
             # Calculate the distance between them
             distance = hypot(abs(x1 - x2), abs(y1 - y2))
             
