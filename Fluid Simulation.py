@@ -1,24 +1,27 @@
+# Importing libraries
 import pyglet
 from pyglet import shapes
 from pyglet.window import key
-from math import hypot, atan, acos, asin
+from math import hypot
 
+# Constants
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 360
 GRAVITY = 9.8
 NUMBER_OF_PARTICLES = 150
 PARTICLE_RADIUS = 10
 SPACING = 20
-# Sweetie 16 Palette
-PARTICLE_COLOUR = (65, 166, 246)
+PARTICLE_COLOUR = (65, 166, 246) # From the Sweetie 16 Palette
 COLLISION_FORCE = 40
 DT_SCALE = 1
 ELASTICTY = 0.4
 SEPERATION_FACTOR = 2
 
+# Function that calculates the dot product of 2 vectors
 def dot_2d(x1, x2, y1, y2):
     return (x1*x2) + (y1*y2)
-    
+   
+# List of particles and a dictionary with particle indexes and positions 
 particles = []
 particle_index_pos = {}
 
@@ -26,8 +29,10 @@ particle_index_pos = {}
 window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption = 'Fluid Simulation')
 window.set_location(440, 240)
 
+# Getting key functionality in Pyglet
 keys = key.KeyStateHandler()
 window.push_handlers(keys)
+
 # Batch for rendering
 sprites_batch = pyglet.graphics.Batch()
 
@@ -39,6 +44,7 @@ images = []
 # Particle Class
 class Particle:
     
+    # Initiation method
     def __init__(self, index, colour = PARTICLE_COLOUR, x = WINDOW_WIDTH / 2, y = WINDOW_HEIGHT / 2) -> None:
         self.circle = shapes.Circle(x = x, y = y, radius = PARTICLE_RADIUS, color = colour)
         self.circle.opacity = 200
@@ -105,14 +111,15 @@ def update(dt):
             particles[i].velocity[1] += 40
     if keys[key.LEFT]:
         for i in range(len(particles)):
-            particles[i].velocity[0] -= 15
+            particles[i].velocity[0] -= 12
     if keys[key.RIGHT]:
         for i in range(len(particles)):
-            particles[i].velocity[0] += 15
+            particles[i].velocity[0] += 12
             
     # Updating the delta time to be in slomo or not
     dt = dt/DT_SCALE
     
+    # Creating the dictionary of particle indexes and positions
     for particle in particles:
         particle_index_pos[particle.index] = (particles[particle.index].circle.x, particles[particle.index].circle.y)
         
@@ -140,6 +147,7 @@ def update(dt):
                 norm_of_vector_x = (x2 - x1) / distance
                 norm_of_vector_y = (y2 - y1) / distance
                 
+                # p = How closely particle 1's vector is alligned with the collision vector - How closely particle 2's vector is alligned with the collision vector
                 p = (dot_2d(particles[i].velocity[0], norm_of_vector_x, particles[i].velocity[1], norm_of_vector_y)) - (dot_2d(particles[j].velocity[0], norm_of_vector_x, particles[j].velocity[1], norm_of_vector_y))
                 
                 # Updating the particle velocities based on the previous calculations
