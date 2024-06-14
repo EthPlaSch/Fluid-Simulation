@@ -77,6 +77,8 @@ colour = int(255 / NUMBER_OF_PARTICLES)
 for i in range(NUMBER_OF_PARTICLES):
     particles.append(Particle(i, (65, 166, 246), i, i))
     particle_index_pos[i] = (particles[i].circle.x, particles[i].circle.y)
+    
+    # Creating the sprites to place on each particle
     single_particle_image = pyglet.sprite.Sprite(particle_image, particles[i].circle.x, particles[i].circle.y, batch = sprites_batch)
     single_particle_image.scale = 0.022
     images.append(single_particle_image)
@@ -103,10 +105,10 @@ def update(dt):
             particles[i].velocity[1] += 40
     if keys[key.LEFT]:
         for i in range(len(particles)):
-            particles[i].velocity[0] -= 10
+            particles[i].velocity[0] -= 15
     if keys[key.RIGHT]:
         for i in range(len(particles)):
-            particles[i].velocity[0] += 10
+            particles[i].velocity[0] += 15
             
     # Updating the delta time to be in slomo or not
     dt = dt/DT_SCALE
