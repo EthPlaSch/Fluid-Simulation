@@ -2,7 +2,7 @@
 import pyglet
 from pyglet import shapes
 from pyglet.window import key
-from math import hypot
+from math import hypot, floor
 
 # Constants
 WINDOW_WIDTH = 640
@@ -10,9 +10,9 @@ WINDOW_HEIGHT = 360
 GRAVITY = 9.8
 NUMBER_OF_PARTICLES = 150
 PARTICLE_RADIUS = 10
+CELL_SIZE = 2 * PARTICLE_RADIUS
 SPACING = 20
 PARTICLE_COLOUR = (65, 166, 246) # From the Sweetie 16 Palette
-COLLISION_FORCE = 40
 DT_SCALE = 1
 ELASTICTY = 0.4
 SEPERATION_FACTOR = 2
@@ -24,6 +24,16 @@ def dot_2d(x1, x2, y1, y2):
 # List of particles and a dictionary with particle indexes and positions 
 particles = []
 particle_index_pos = {}
+
+# Creating dictionary and number of grid cells
+cells = {}
+cells_tall = (WINDOW_HEIGHT // CELL_SIZE) + 1
+cells_wide = (WINDOW_WIDTH // CELL_SIZE) + 1
+
+# Creating the dictionary that is all the cell coords and the empty lists that will hold which particles are in them
+for y in range(cells_tall):
+    for x in range(cells_wide):
+        cells[(x, y)] = []
 
 # Making the window and setting it to be in the middle of the screen (on a 1080p screen)
 window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption = 'Fluid Simulation')
@@ -86,7 +96,7 @@ for i in range(NUMBER_OF_PARTICLES):
     
     # Creating the sprites to place on each particle
     single_particle_image = pyglet.sprite.Sprite(particle_image, particles[i].circle.x, particles[i].circle.y, batch = sprites_batch)
-    single_particle_image.scale = 0.022
+    single_particle_image.scale = PARTICLE_RADIUS / 454.5454545454545
     images.append(single_particle_image)
     
 # Running the actual functions
@@ -119,15 +129,94 @@ def update(dt):
     # Updating the delta time to be in slomo or not
     dt = dt/DT_SCALE
     
+    for y in range(cells_tall):
+        for x in range(cells_wide):
+            cells[(x, y)] = []
+    
     # Creating the dictionary of particle indexes and positions
     for particle in particles:
-        particle_index_pos[particle.index] = (particles[particle.index].circle.x, particles[particle.index].circle.y)
         
+        # Adding
+        cell_x = particles[particle.index].circle.x // CELL_SIZE
+        cell_y = particles[particle.index].circle.y // CELL_SIZE
+        
+        # Ensuring we dont go outside the grid
+        if cell_x < 0:
+            cell_x = 0
+        if cell_x > cells_wide - 1:
+            cell_x = cells_wide - 1
+        if cell_y < 0:
+            cell_y = 0
+        if cell_y > cells_tall - 1:
+            cell_y = cells_tall - 1
+        
+        cells[(cell_x, cell_y)].append(particle.index)
+        
+        particle_index_pos[particle.index] = (particles[particle.index].circle.x, particles[particle.index].circle.y)
+            
+    
     # Looping over every particle
     for i in range(len(particles) - 1):
+        
+        # Getting the x, y position of the particle from dictionary containing it
         particle_pos = particle_index_pos[i]
-        # Loop over every other particle
-        for j in range(i + 1, len(particles)):
+        
+        # Getting grid position of cell (with decimal)
+        x = particle_pos[0] / CELL_SIZE
+        y = particle_pos[1] / CELL_SIZE
+        
+        # Getting the int grid coords of where the particle is
+        cell_coords = [floor(x), floor(y)]
+        
+        # Finding just the value after the decimal place, eg 3.71 becomes 0.71
+        x_dec = x - cell_coords[0]
+        y_dec = y - cell_coords[1]
+        
+        check_cells = []
+        
+        # Collecting four surrounding cells to check for collisions using that decimal value
+        # For x
+        if x_dec > 0.5 and cell_coords[0] < cells_wide:
+            check_cells.append(1)
+        elif x_dec < 0.5 and cell_coords[0] > 0:
+            check_cells.append(-1)
+        else:
+            check_cells.append(0)
+            
+        # For y
+        if y_dec > 0.5 and cell_coords[1] < cells_tall:
+            check_cells.append(1)
+        elif y_dec < 0.5 and cell_coords[1] > 0:
+            check_cells.append(-1)
+        else:
+            check_cells.append(0)
+        
+        # Creaing a list of cells that need to be looped over (aka the four cells the particle is laying between)
+        # Has to be list to alter values, wish it could be a set
+        cells_to_loop_over = [cell_coords, [cell_coords[0] + check_cells[0], cell_coords[1]], [cell_coords[0], cell_coords[1] + check_cells[1]], [cell_coords[0] + check_cells[0], cell_coords[1] + check_cells[1]]]
+        
+        # Creating the list of particles in those cells
+        particles_in_collision_cells = []
+        
+        # For every cell we need to check add particles in those cells to a list
+        for cell in cells_to_loop_over:
+            
+            # Keeping cell coords in the predefined grid size
+            if cell[0] < 0:
+                cell[0] = 0
+            if cell[0] > cells_wide - 1:
+                cell[0] = cells_wide - 1
+            if cell[1] < 0:
+                cell[1] = 0
+            if cell[1] > cells_tall - 1:
+                cell[1] = cells_tall - 1
+            
+            # Adding particles that need to be collided with into a list
+            for particle in cells[tuple(cell)]:
+                particles_in_collision_cells.append(particle)
+            
+        # Looping over every particle in said list and running collision code    
+        for j in particles_in_collision_cells:
             
             # Getting the other particles position 
             other_pos = particle_index_pos[j]
@@ -167,20 +256,22 @@ def update(dt):
                 particles[i].circle.y -= norm_of_vector_y * SEPERATION_FACTOR
                 particles[j].circle.x += norm_of_vector_x * SEPERATION_FACTOR
                 particles[j].circle.y += norm_of_vector_y * SEPERATION_FACTOR
-              
+        
+        # Scale factor
+        scale_factor = ((PARTICLE_RADIUS / 454.5454545454545) * 100)
+        
         # Updating the position of the sprite to match the position of the particle  
-        images[i].x = particles[i].circle.x - PARTICLE_RADIUS * 2.2
-        images[i].y = particles[i].circle.y - PARTICLE_RADIUS * 2.2
+        images[i].x = particles[i].circle.x - PARTICLE_RADIUS * scale_factor
+        images[i].y = particles[i].circle.y - PARTICLE_RADIUS * scale_factor
         
     # Updating the last particle's image location
-    images[-1].x = particles[-1].circle.x - PARTICLE_RADIUS * 2.2
-    images[-1].y = particles[-1].circle.y - PARTICLE_RADIUS * 2.2
+    images[-1].x = particles[-1].circle.x - PARTICLE_RADIUS * scale_factor
+    images[-1].y = particles[-1].circle.y - PARTICLE_RADIUS * scale_factor
              
     # Looping over every particle and updating them   
     for i in range(len(particles)):
         particles[i].update_particle(dt)
     
-
 # Basically saying call the update function 60 times per second
 pyglet.clock.schedule_interval(update, 1/60)
 # Needs to be the last line
