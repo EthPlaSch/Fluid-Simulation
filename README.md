@@ -30,4 +30,5 @@ you can move the objects left, right, or up. The particles should all fly about 
 All the code was written by me, all art assets were created by me, however external resources were used for research and sometimes code (see code for reference when used)
 
 Leong, E. (2009). _An Approach to Accurate Multiple Collision Detection and Response._ https://ericleong.me/old/research/leong09.pdf
+
 Ten Minute Physics. (2022, December 3). _17 - How to write an Eulerian fluid simulator with 200 lines of code [Video]._ YouTube. https://www.youtube.com/watch?v=iKAVRgIrUOU
