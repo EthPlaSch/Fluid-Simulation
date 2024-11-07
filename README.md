@@ -11,6 +11,7 @@ look good enough for simple applications.
 ---- How to Run -----
 
 To run Grid_Based_Simulation.py or Particle_Based_Simulation.py simply copy the code into a code editor of choice and hit run (the files are python files to be clear).
+You will also need to install any libraries used, e.g. Pyglet.
 
 ----- How to Use -----
 
