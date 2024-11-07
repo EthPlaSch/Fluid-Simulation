@@ -8,14 +8,16 @@ from math import hypot, floor
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 360
 GRAVITY = 9.8
-NUMBER_OF_PARTICLES = 150
-PARTICLE_RADIUS = 10
+NUMBER_OF_PARTICLES = 200
+PARTICLE_RADIUS = 9
 CELL_SIZE = 2 * PARTICLE_RADIUS
 SPACING = 20
 PARTICLE_COLOUR = (65, 166, 246) # From the Sweetie 16 Palette
 DT_SCALE = 1
 ELASTICTY = 0.4
 SEPERATION_FACTOR = 2
+PUSH_FORCE = 30
+BALL_THRESHOLD = 10
 
 # Function that calculates the dot product of 2 vectors
 def dot_2d(x1, x2, y1, y2):
@@ -244,19 +246,19 @@ def update(dt):
                 # p = How closely particle 1's vector is alligned with the collision vector - How closely particle 2's vector is alligned with the collision vector
                 p = (dot_2d(particles[i].velocity[0], norm_of_vector_x, particles[i].velocity[1], norm_of_vector_y)) - (dot_2d(particles[j].velocity[0], norm_of_vector_x, particles[j].velocity[1], norm_of_vector_y))
                 
-                # Updating the particle velocities based on the previous calculations
                 particles[i].velocity[0] -= (p * norm_of_vector_x)
                 particles[i].velocity[1] -= (p * norm_of_vector_y)
                 particles[j].velocity[0] += (p * norm_of_vector_x)
                 particles[j].velocity[1] += (p * norm_of_vector_y)
+                    
                 # -----------------------------------------------------------------------------------------------------------------------------
                 
                 # This forces the particles apart by moving the particles apart along the normalised vectors
-                particles[i].circle.x -= norm_of_vector_x * SEPERATION_FACTOR
-                particles[i].circle.y -= norm_of_vector_y * SEPERATION_FACTOR
-                particles[j].circle.x += norm_of_vector_x * SEPERATION_FACTOR
-                particles[j].circle.y += norm_of_vector_y * SEPERATION_FACTOR
-        
+                particles[i].circle.x -= (norm_of_vector_x * SEPERATION_FACTOR)
+                particles[i].circle.y -= (norm_of_vector_y * SEPERATION_FACTOR)
+                particles[j].circle.x += (norm_of_vector_x * SEPERATION_FACTOR)
+                particles[j].circle.y += (norm_of_vector_y * SEPERATION_FACTOR)
+                
         # Scale factor
         scale_factor = ((PARTICLE_RADIUS / 454.5454545454545) * 100)
         
