@@ -2,16 +2,15 @@
 
 ----- Overview -----
 
-This project explores my journey into the world of fluid simulations. This project has three files: "Grid_Based_Simulation.py; Particle_Based_Simulation.py; Particle.png.
+This project explores my journey into the world of fluid simulations. This project has two files: "Grid_Based_Simulation.py and Particle_Based_Simulation.py.
 The first file there is an attempt at the Eulerian method of fluid simulation using grids instead of particles. However this project is incomplete.
 The major backbone is in place however the file itself is not anywhere close to a smooth running fluid simulation and has many issues.
-The latter two files are a object based simulation and a texture for that simulation. Both files are required for that simulation. This method works by simulating
-circle collisions creating somewhat of a ballpit simulation which can look good enough for simple applications.
+The latter file is a object based simulation. This method works by simulating circle collisions creating somewhat of a ballpit simulation which can 
+look good enough for simple applications.
 
 ---- How to Run -----
 
-To run Grid_Based_Simulation.py simply copy the code into a code editor of choice and hit run (the file is a python file to be clear).
-To run Particle_Based_Simulation.py also copy the code into a code editor of choice, but be sure to save the image as well and place it in the same directory.
+To run Grid_Based_Simulation.py or Particle_Based_Simulation.py simply copy the code into a code editor of choice and hit run (the files are python files to be clear).
 
 ----- How to Use -----
 
